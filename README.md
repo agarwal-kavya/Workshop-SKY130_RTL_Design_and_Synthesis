@@ -418,24 +418,91 @@ Here the output of the module is just sensing the output q as count[0] Basically
 
 # 4. Day-4- GLS, Blocking vs Nonblocking and Synthesis-Simulation Mismatch
 
-
-  
+ 
   ## 4.1 GLS Concepts And Flow
   
-  
-  
+ GLS stands for gate level simulation. When we write the RTL code, we test it by giving it some stimulus through the testbench and check it for the desired specifications. Similarly, we run the netlist as the design under test (dut) with the same testbench. 
+Gate level simulation is done to verify the logical correctness of the design after synthesis. Also, it ensures the timing of the design. 
+ 
+  ![Pic38](https://user-images.githubusercontent.com/110079729/183990833-e2d590b2-51ef-4a50-8968-0de0d5a66655.png)
+
   ## 4.2 Synthesis Simulation Mismatch
   
+  The possible reasons for Synthesis Simulation Mismatches are 
+ - Missing Sensitivity List
+ - Blocking and Nonblocking Assignments
+ - Non-standard Verilog Coding Practices
   
   
   ## 4.3 Missing Sensitivity List
   
-  
-  
+  The simulator works based on the activity, i.e., output will change only when input changes. Consider an example of a mux below.
+```
+module mux (input i0, input i1, input sel, output reg y);
+	always@(sel)
+		begin
+			if(sel)
+				y = i1;
+			else
+				y = i0;
+		end
+endmodule
+```
+Here, we did a major blunder. We have included only `sel` in the sensitivity list. Actually, we should have included `sel`, `i0` and `i1`. So, we get the following wrong waveform. 
+
+![Pic39](https://user-images.githubusercontent.com/110079729/183992381-a6aa5396-3484-404d-9727-8055c26cc91a.png)
+
+
+Alternatively, we can write this code, which works properly. 
+```
+module mux (input i0, input i1, input sel, output reg y);
+	always@()
+		begin
+			if(sel)
+				y = i1;
+			else
+				y = i0;
+		end
+endmodule
+```
+
+![Pic40](https://user-images.githubusercontent.com/110079729/183992456-41146b32-7433-4f5c-acb9-f1be3acb26a3.png)
+
+
   ## 4.4 Blocking and Nonblocking Statements in Verilog
   
   
-  
+  In a verilog code, blocking statements are in sequential order, where as non blocking statements are executed in concurrent fashion.
+
+* Inside always block  
+ `= Blocking`  
+     * Executes the statement in the order it is written.  
+     * So the first statement is evaluated before the second statement.  
+  `<= Non-Blocking`  
+     * Executes all RHS when always block is entered and assign to LHS.  
+     * Parallel Evaluation.  
+     
+let us consider the follwoing `verilog code`.
+```
+module blocking_caveat (input a , input b , input  c, output reg d); 
+reg x;
+always @ (*)
+begin
+	d = x & c;
+	x = a | b;
+end
+endmodule
+
+```
+
+In the above example the output d is evaluated first and x is evaluated next. Therefore the output d is evaluated based on the previous value of x. This creates a mismatch between Synthesis and Simulation output.
+
+The following figure shows the `RTL simulation` output of above code. As it can be seen in the output waveform, the output y is evaluated based on the previous values of a and b.
+
+
+![Screenshot from 2022-08-10 16-58-37](https://user-images.githubusercontent.com/110079729/184069274-6dbafba4-16e1-41c9-b8fd-b72d13d53790.png)
+
+
 
 
 # 5. Day-5- If, case, for and for generate
